@@ -2,7 +2,7 @@ const ElectrumClient = require("@lily-technologies/electrum-client");
 const bitcoindService = require("services/bitcoind");
 
 const ELECTRS_HOST = process.env.ELECTRS_HOST || "0.0.0.0";
-const rpcClient = new ElectrumClient(50001, ELECTRS_HOST, "tcp");
+const rpcClient = new ElectrumClient(50004, ELECTRS_HOST, "tcp");
 
 async function getVersion() {
   const initClient = await rpcClient.initElectrum({
