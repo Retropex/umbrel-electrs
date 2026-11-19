@@ -1,34 +1,25 @@
-# Build Stage
-FROM node:16-buster-slim AS umbrel-electrs-builder
-
-# Install tools
-# RUN apt-get update \
-#     && apt-get install -y build-essential \
-#     && apt-get install -y python3
-
-# Create app directory
+# Install only backend runtime dependencies for the final image.
+FROM node:24.22.3-slim@sha256:dc26ae92c9fb15cf6b1d63e20f0944b2efe0f115b20e00be48fb23fceb061c54 AS backend-builder
 WORKDIR /app
+COPY package.json package-lock.json ./
+COPY apps/backend/package.json ./apps/backend/package.json
+COPY apps/frontend/package.json ./apps/frontend/package.json
+RUN npm ci --workspace umbrel-electrs-backend --omit=dev
+COPY apps/backend ./apps/backend
 
-# Copy 'package-lock.json' and 'package.json'
-COPY package-lock.json package.json ./
-COPY apps ./apps
-
-# Install dependencies
-RUN npm install
-
-# Copy project files and folders to the current working directory (i.e. '/app')
-COPY . .
-
+# Build the dashboard separately from the runtime dependencies.
+FROM node:24.22.3-slim@sha256:dc26ae92c9fb15cf6b1d63e20f0944b2efe0f115b20e00be48fb23fceb061c54 AS frontend-builder
+WORKDIR /app
+COPY package.json package-lock.json ./
+COPY apps/backend/package.json ./apps/backend/package.json
+COPY apps/frontend/package.json ./apps/frontend/package.json
+RUN npm ci
+COPY apps/frontend ./apps/frontend
 RUN npm run build:frontend
 
-# Final image
-FROM node:16-buster-slim AS umbrel-electrs
-
-# Copy built code from build stage to '/app' directory
-COPY --from=umbrel-electrs-builder /app /app
-
-# Change directory to '/app' 
+FROM node:24.22.3-slim@sha256:dc26ae92c9fb15cf6b1d63e20f0944b2efe0f115b20e00be48fb23fceb061c54 AS umbrel-electrs
 WORKDIR /app
-
+COPY --from=backend-builder /app /app
+COPY --from=frontend-builder /app/apps/frontend/dist/ /app/apps/frontend/dist/
 EXPOSE 3006
 CMD [ "npm", "run", "dev:backend" ]

@@ -28,6 +28,30 @@
 
 This app can be installed in one click via the Umbrel App Store.
 
+## Dashboard runtime and checks
+
+The container uses the pinned Node.js 24.22.3 base from upstream Umbrel. The final
+image installs the backend workspace's production dependencies and copies the
+built dashboard; frontend build tools stay in the build stage.
+
+To check the source on Node.js 24.22.3:
+
+```sh
+npm ci
+npm run build:frontend
+npm test
+```
+
+The tests use local synthetic Bitcoin RPC and Electrum servers. They cover the
+standard TCP port 50001 and `ELECTRUM_PORT=50004`, including synchronization,
+server version, and LAN/Tor connection details. The existing `ELECTRUM_PORT`
+setting now controls the dashboard's internal Electrum connection as well as its
+advertised wallet details. This does not change the indexer or its listening port.
+
+Updating Node does not resolve every legacy dependency advisory. A rebuilt image
+still needs container, architecture, non-root compatibility, browser and image
+scan validation before a maintained release and catalog update.
+
 ## Contributing
 
 We welcome and appreciate new contributions!
